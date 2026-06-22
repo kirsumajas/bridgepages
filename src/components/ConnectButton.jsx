@@ -1,33 +1,36 @@
+import { useWallets } from '../hooks/useWallets.jsx'
+
 const shorten = (addr) => `${addr.slice(0, 6)}…${addr.slice(-4)}`
 
-export default function ConnectButton({ wallet }) {
-  const { installed, account, connecting, connect, disconnect } = wallet
+const DOT = { evm: '#627eea', solana: '#14f195', ton: '#0098ea' }
+const LABEL = { evm: 'EVM', solana: 'Solana', ton: 'TON' }
 
-  if (!installed) {
-    return (
-      <a
-        className="btn btn-primary"
-        href="https://metamask.io/download/"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Install MetaMask
-      </a>
-    )
-  }
-
-  if (account) {
-    return (
-      <button className="btn btn-ghost" onClick={disconnect} title="Click to disconnect">
-        <span className="dot dot-green" />
-        {shorten(account)}
-      </button>
-    )
-  }
+export default function ConnectButton() {
+  const wallets = useWallets()
+  const connected = wallets.list.filter((w) => w.account)
 
   return (
-    <button className="btn btn-primary" onClick={connect} disabled={connecting}>
-      {connecting ? 'Connecting…' : 'Connect Wallet'}
-    </button>
+    <div className="connect-area">
+      {connected.map((w) => (
+        <button
+          key={w.vm}
+          className="btn btn-ghost wallet-chip"
+          onClick={w.disconnect}
+          title={`${LABEL[w.vm]} — click to disconnect`}
+        >
+          <span className="dot" style={{ background: DOT[w.vm] }} />
+          {shorten(w.account)}
+        </button>
+      ))}
+      {connected.length === 0 && (
+        <button
+          className="btn btn-primary"
+          onClick={wallets.evm.connect}
+          disabled={wallets.evm.connecting}
+        >
+          {wallets.evm.connecting ? 'Connecting…' : 'Connect Wallet'}
+        </button>
+      )}
+    </div>
   )
 }

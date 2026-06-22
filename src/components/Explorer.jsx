@@ -3,9 +3,18 @@ import { formatEther } from 'ethers'
 import { CHAIN_LIST, CHAINS, getChainByKey } from '../config/chains.js'
 import { getReadProvider } from '../lib/wallet.js'
 import { explorerTxUrl } from '../lib/bridge.js'
+import { getSolBlockHeight } from '../lib/solana.js'
+import { getTonSeqno } from '../lib/ton.js'
 import { useHistory } from '../hooks/useHistory.js'
 import { clearHistory } from '../lib/history.js'
 import MarketStats from './MarketStats.jsx'
+
+// Latest block/slot/seqno for a chain, dispatched by VM.
+const fetchHeight = (chain) => {
+  if (chain.vm === 'solana') return getSolBlockHeight()
+  if (chain.vm === 'ton') return getTonSeqno()
+  return getReadProvider(chain.key).getBlockNumber()
+}
 
 const shorten = (s, n = 6) => (s ? `${s.slice(0, n)}…${s.slice(-4)}` : '')
 
@@ -25,8 +34,8 @@ function NetworkStatus() {
     const fetchBlocks = () => {
       CHAIN_LIST.forEach(async (chain) => {
         try {
-          const bn = await getReadProvider(chain.key).getBlockNumber()
-          if (!cancelled) setBlocks((prev) => ({ ...prev, [chain.key]: bn }))
+          const bn = await fetchHeight(chain)
+          if (!cancelled) setBlocks((prev) => ({ ...prev, [chain.key]: Number(bn) }))
         } catch {
           if (!cancelled) setBlocks((prev) => ({ ...prev, [chain.key]: 'offline' }))
         }
@@ -189,17 +198,12 @@ function Activity() {
         </p>
       ) : (
         <div className="activity-list">
-          {history.map((h) => {
+          {history.map((h, i) => {
             const src = CHAINS[h.sourceKey]
             const dst = CHAINS[h.destKey]
-            return (
-              <a
-                key={h.hash}
-                className="activity-row"
-                href={src ? explorerTxUrl(src, h.hash) : '#'}
-                target="_blank"
-                rel="noreferrer"
-              >
+            const linkable = src && h.hash
+            const inner = (
+              <>
                 <div className="activity-route">
                   <span className="chain-dot" style={{ background: src?.color }} />
                   {src?.short}
@@ -213,7 +217,22 @@ function Activity() {
                   </span>
                   <span className="activity-time">{timeAgo(h.ts)}</span>
                 </div>
+              </>
+            )
+            return linkable ? (
+              <a
+                key={`${h.ts}-${i}`}
+                className="activity-row"
+                href={explorerTxUrl(src, h.hash)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {inner}
               </a>
+            ) : (
+              <div key={`${h.ts}-${i}`} className="activity-row activity-row-static">
+                {inner}
+              </div>
             )
           })}
         </div>

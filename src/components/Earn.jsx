@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { POOLS, poolChain, poolSymbol } from '../config/pools.js'
 import { useBalance } from '../hooks/useBalance.js'
 import { useTxSender } from '../hooks/useTxSender.js'
+import { useWallets } from '../hooks/useWallets.jsx'
 import { usePositions, useTicker } from '../hooks/usePositions.js'
 import { usePrices } from '../hooks/usePrices.jsx'
-import { transferTo } from '../lib/bridge.js'
 import { accruedFees, addToPosition, removePosition } from '../lib/positions.js'
 import { priceOf, formatUsd, formatCompactUsd } from '../lib/prices.js'
 import TxStatus from './TxStatus.jsx'
@@ -18,13 +18,15 @@ const fmt = (n, dp = 6) => {
   return v.toFixed(dp)
 }
 
-function PoolCard({ pool, wallet, position }) {
-  const { account } = wallet
-  const chain = poolChain(pool)
+function PoolCard({ pool, position }) {
+  const wallets = useWallets()
+  const chain = poolChain(pool) // pools are EVM
+  const evm = wallets.forVm('evm')
+  const account = evm.account
   const symbol = poolSymbol(pool)
   const [amount, setAmount] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
-  const { status, submitting, send } = useTxSender(wallet)
+  const { status, submitting, send } = useTxSender(wallets)
   const { balance } = useBalance(chain, account, pool.token, refreshKey)
   const { prices } = usePrices()
 
@@ -37,16 +39,16 @@ function PoolCard({ pool, wallet, position }) {
   const balanceNum = balance ? Number(balance) : 0
 
   let disabledReason = null
-  if (!account) disabledReason = 'Connect your wallet'
-  else if (!amount || amountNum <= 0) disabledReason = 'Enter an amount'
+  if (!amount || amountNum <= 0) disabledReason = 'Enter an amount'
   else if (amountNum > balanceNum) disabledReason = 'Insufficient balance'
 
   const onDeposit = async () => {
     if (disabledReason) return
     await send({
       chain,
-      build: (signer) =>
-        transferTo({ signer, chain, token: pool.token, amount, to: pool.poolAddress }),
+      token: pool.token,
+      amount,
+      to: pool.poolAddress,
       successMsg: `Provided ${amount} ${symbol} to the ${chain.short} pool. You're now earning fees.`,
       onConfirmed: () => {
         addToPosition(pool.id, account, amount, Date.now())
@@ -117,11 +119,7 @@ function PoolCard({ pool, wallet, position }) {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
-        <button
-          className="max-btn"
-          onClick={() => balance && setAmount(balance)}
-          disabled={!balance}
-        >
+        <button className="max-btn" onClick={() => balance && setAmount(balance)} disabled={!balance}>
           MAX
         </button>
         <span className="amount-symbol">{symbol}</span>
@@ -131,13 +129,23 @@ function PoolCard({ pool, wallet, position }) {
       </div>
 
       <div className="pool-actions">
-        <button
-          className="btn btn-primary btn-block"
-          onClick={onDeposit}
-          disabled={Boolean(disabledReason) || submitting}
-        >
-          {submitting ? 'Processing…' : disabledReason || 'Provide liquidity'}
-        </button>
+        {account ? (
+          <button
+            className="btn btn-primary btn-block"
+            onClick={onDeposit}
+            disabled={Boolean(disabledReason) || submitting}
+          >
+            {submitting ? 'Processing…' : disabledReason || 'Provide liquidity'}
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary btn-block"
+            onClick={evm.connect}
+            disabled={evm.connecting}
+          >
+            {evm.connecting ? 'Connecting…' : 'Connect Wallet'}
+          </button>
+        )}
         {position && (
           <button className="btn btn-ghost" onClick={onWithdraw} disabled={submitting}>
             Withdraw
@@ -150,8 +158,9 @@ function PoolCard({ pool, wallet, position }) {
   )
 }
 
-export default function Earn({ wallet }) {
-  const { account } = wallet
+export default function Earn() {
+  const wallets = useWallets()
+  const account = wallets.forVm('evm').account
   const positions = usePositions()
   const { prices } = usePrices()
   useTicker(1000) // re-render so fee accrual ticks live
@@ -176,8 +185,7 @@ export default function Earn({ wallet }) {
         <h1>Earn from bridge fees</h1>
         <p>
           Provide liquidity to power cross-chain transfers. Your deposited assets back
-          bridge transactions on that chain, and you earn a share of every transfer's
-          fee.
+          bridge transactions on that chain, and you earn a share of every transfer's fee.
         </p>
         <div className="earn-summary">
           <div>
@@ -192,13 +200,13 @@ export default function Earn({ wallet }) {
       </div>
 
       {myPositions.map(({ pool, pos }) => (
-        <PoolCard key={pool.id} pool={pool} wallet={wallet} position={pos} />
+        <PoolCard key={pool.id} pool={pool} position={pos} />
       ))}
 
       <p className="disclaimer">
-        Testnet only. Deposits are real on-chain transactions to the pool address; APR,
-        TVL, and earned fees are simulated client-side for this demo — see the README to
-        wire a real pool contract.
+        Earn pools are EVM-only for now. Testnet only — deposits are real on-chain
+        transactions to the pool address; APR, TVL, and earned fees are simulated
+        client-side for this demo. See the README to wire a real pool contract.
       </p>
     </div>
   )

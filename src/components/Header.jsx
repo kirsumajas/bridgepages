@@ -1,7 +1,7 @@
 import ConnectButton from './ConnectButton.jsx'
 import ThemeToggle from './ThemeToggle.jsx'
 
-export default function Header({ wallet, theme, onToggleTheme }) {
+export default function Header({ theme, onToggleTheme }) {
   return (
     <header className="header">
       <div className="brand">
@@ -13,7 +13,7 @@ export default function Header({ wallet, theme, onToggleTheme }) {
       </div>
       <div className="header-actions">
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-        <ConnectButton wallet={wallet} />
+        <ConnectButton />
       </div>
     </header>
   )

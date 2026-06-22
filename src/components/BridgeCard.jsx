@@ -2,22 +2,34 @@ import { useEffect, useMemo, useState } from 'react'
 import { CHAINS, CHAIN_LIST } from '../config/chains.js'
 import { useBalance } from '../hooks/useBalance.js'
 import { useTxSender } from '../hooks/useTxSender.js'
+import { useWallets } from '../hooks/useWallets.jsx'
 import { usePrices } from '../hooks/usePrices.jsx'
-import { depositToBridge } from '../lib/bridge.js'
 import { addHistory } from '../lib/history.js'
 import { usdValue, formatUsd } from '../lib/prices.js'
+import { isSolanaAddress } from '../lib/solana.js'
+import { isTonAddress } from '../lib/ton.js'
 import ChainSelect from './ChainSelect.jsx'
 import TxStatus from './TxStatus.jsx'
 
-const isAddress = (v) => /^0x[a-fA-F0-9]{40}$/.test(v)
+const isEvmAddress = (v) => /^0x[a-fA-F0-9]{40}$/.test(v)
 
-export default function BridgeCard({ wallet }) {
-  const { account } = wallet
-  const { status, submitting, send } = useTxSender(wallet)
+// Recipient validator + connect label per VM.
+const validateFor = (vm, v) =>
+  vm === 'solana' ? isSolanaAddress(v) : vm === 'ton' ? isTonAddress(v) : isEvmAddress(v)
+
+const CONNECT_LABEL = {
+  evm: 'Connect Wallet',
+  solana: 'Connect Phantom',
+  ton: 'Connect TON Wallet',
+}
+
+export default function BridgeCard() {
+  const wallets = useWallets()
+  const { status, submitting, send } = useTxSender(wallets)
   const { prices } = usePrices()
 
   const [sourceKey, setSourceKey] = useState('sepolia')
-  const [destKey, setDestKey] = useState('amoy')
+  const [destKey, setDestKey] = useState('solanaDevnet')
   const [tokenIdx, setTokenIdx] = useState('native')
   const [amount, setAmount] = useState('')
   const [recipient, setRecipient] = useState('')
@@ -25,8 +37,9 @@ export default function BridgeCard({ wallet }) {
 
   const source = CHAINS[sourceKey]
   const dest = CHAINS[destKey]
+  const sourceWallet = wallets.forChain(source)
+  const account = sourceWallet.account
 
-  // The selected asset: 'native' or an index into source.tokens.
   const token = useMemo(() => {
     if (tokenIdx === 'native') return null
     return source.tokens[Number(tokenIdx)] ?? null
@@ -36,22 +49,18 @@ export default function BridgeCard({ wallet }) {
   const assetId = token ? token.coingeckoId : source.nativeCurrency.coingeckoId
   const amountUsd = usdValue(amount, assetId, prices)
 
-  const { balance, loading: balanceLoading } = useBalance(
-    source,
-    account,
-    token,
-    refreshKey,
-  )
+  const { balance, loading: balanceLoading } = useBalance(source, account, token, refreshKey)
 
-  // Reset token selection when the source chain changes.
   useEffect(() => {
     setTokenIdx('native')
   }, [sourceKey])
 
-  // Default the recipient to the connected account.
+  // Default the recipient to the connected account on the destination chain
+  // (only when it'd be a valid address for that chain).
   useEffect(() => {
-    if (account && !recipient) setRecipient(account)
-  }, [account, recipient])
+    const destAccount = wallets.forChain(dest).account
+    if (destAccount && !recipient) setRecipient(destAccount)
+  }, [dest, wallets, recipient])
 
   const handleSourceChange = (key) => {
     setSourceKey(key)
@@ -72,6 +81,7 @@ export default function BridgeCard({ wallet }) {
   const flip = () => {
     setSourceKey(destKey)
     setDestKey(sourceKey)
+    setRecipient('')
   }
 
   const setMax = () => {
@@ -81,24 +91,25 @@ export default function BridgeCard({ wallet }) {
   const amountNum = Number(amount)
   const balanceNum = balance ? Number(balance) : 0
   const overBalance = amountNum > balanceNum
+  const needsConnect = !account
 
   let disabledReason = null
-  if (!account) disabledReason = 'Connect your wallet'
-  else if (!amount || amountNum <= 0) disabledReason = 'Enter an amount'
+  if (!amount || amountNum <= 0) disabledReason = 'Enter an amount'
   else if (overBalance) disabledReason = 'Insufficient balance'
-  else if (!isAddress(recipient)) disabledReason = 'Enter a valid recipient address'
+  else if (!validateFor(dest.vm, recipient)) disabledReason = `Enter a valid ${dest.short} address`
 
   const onBridge = async () => {
     if (disabledReason) return
     await send({
       chain: source,
-      build: (signer) =>
-        depositToBridge({ signer, sourceChain: source, token, amount, recipient }),
+      token,
+      amount,
+      to: source.bridgeAddress,
       successMsg: `Deposited ${amount} ${assetSymbol} on ${source.short}. Bridging to ${dest.short} is handled by the relayer.`,
-      onConfirmed: (tx) => {
+      onConfirmed: ({ hash }) => {
         addHistory({
           type: 'bridge',
-          hash: tx.hash,
+          hash,
           sourceKey: source.key,
           destKey: dest.key,
           asset: assetSymbol,
@@ -117,25 +128,15 @@ export default function BridgeCard({ wallet }) {
     <div className="card">
       <div className="card-head">
         <h1>Bridge assets</h1>
-        <p>Move testnet tokens across chains.</p>
+        <p>Move testnet tokens across chains — EVM, Solana &amp; TON.</p>
       </div>
 
       <div className="route">
-        <ChainSelect
-          label="From"
-          value={source}
-          onChange={handleSourceChange}
-          disabledKey={destKey}
-        />
+        <ChainSelect label="From" value={source} onChange={handleSourceChange} disabledKey={destKey} />
         <button className="flip-btn" onClick={flip} title="Swap chains" aria-label="Swap chains">
           ⇅
         </button>
-        <ChainSelect
-          label="To"
-          value={dest}
-          onChange={handleDestChange}
-          disabledKey={sourceKey}
-        />
+        <ChainSelect label="To" value={dest} onChange={handleDestChange} disabledKey={sourceKey} />
       </div>
 
       <label className="field">
@@ -191,20 +192,32 @@ export default function BridgeCard({ wallet }) {
         <span className="field-label">Recipient on {dest.short}</span>
         <input
           className="text-input"
-          placeholder="0x…"
+          placeholder={dest.vm === 'evm' ? '0x…' : dest.vm === 'ton' ? 'EQ… / UQ…' : 'Solana address'}
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
           spellCheck={false}
         />
       </label>
 
-      <button
-        className="btn btn-primary btn-block"
-        onClick={onBridge}
-        disabled={Boolean(disabledReason) || submitting}
-      >
-        {submitting ? 'Processing…' : disabledReason || `Bridge ${assetSymbol}`}
-      </button>
+      {needsConnect ? (
+        <button
+          className="btn btn-primary btn-block"
+          onClick={sourceWallet.connect}
+          disabled={sourceWallet.connecting}
+        >
+          {sourceWallet.connecting ? 'Connecting…' : CONNECT_LABEL[source.vm]}
+        </button>
+      ) : (
+        <button
+          className="btn btn-primary btn-block"
+          onClick={onBridge}
+          disabled={Boolean(disabledReason) || submitting}
+        >
+          {submitting ? 'Processing…' : disabledReason || `Bridge ${assetSymbol}`}
+        </button>
+      )}
+
+      {sourceWallet.error && <div className="banner banner-error" style={{ marginTop: 12 }}>{sourceWallet.error}</div>}
 
       <TxStatus status={status} chain={source} />
 

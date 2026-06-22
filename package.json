@@ -9,9 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@solana/web3.js": "^1.98.4",
+    "@tonconnect/ui-react": "^3.0.0",
     "ethers": "^6.13.4",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "vite-plugin-node-polyfills": "^0.28.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

@@ -34,5 +34,11 @@ export async function depositToBridge({
   return transferTo({ signer, chain: sourceChain, token, amount, to: sourceChain.bridgeAddress })
 }
 
-export const explorerTxUrl = (chain, hash) =>
-  `${chain.blockExplorerUrls[0]}/tx/${hash}`
+export const explorerTxUrl = (chain, hash) => {
+  const base = chain.blockExplorerUrls[0]
+  if (chain.vm === 'solana') {
+    const q = chain.explorerCluster ? `?cluster=${chain.explorerCluster}` : ''
+    return `${base}/tx/${hash}${q}`
+  }
+  return `${base}/tx/${hash}`
+}
