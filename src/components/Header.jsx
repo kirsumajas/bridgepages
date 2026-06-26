@@ -12,11 +12,8 @@ export default function Header({ theme, onToggleTheme, active, onChange }) {
     >
       <header className="header">
         <div className="brand">
-          <span className="brand-logo">🌉</span>
-          <div>
-            <div className="brand-name">Crosschain Bridge</div>
-            <div className="brand-sub">Testnet</div>
-          </div>
+          <span className="brand-mark" />
+          <div className="brand-name brand-wordmark">MEPO</div>
         </div>
         <Tabs active={active} onChange={onChange} />
         <div className="header-actions">

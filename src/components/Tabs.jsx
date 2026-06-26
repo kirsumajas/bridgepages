@@ -1,4 +1,5 @@
 const TABS = [
+  { key: 'home', label: 'Home', icon: '🏠' },
   { key: 'bridge', label: 'Bridge', icon: '🌉' },
   { key: 'explorer', label: 'Explorer', icon: '🔎' },
   { key: 'earn', label: 'Earn', icon: '💰' },

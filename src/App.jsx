@@ -3,6 +3,7 @@ import { useWallets } from './hooks/useWallets.jsx'
 import { useTheme } from './hooks/useTheme.js'
 import { getChainById } from './config/chains.js'
 import Header from './components/Header.jsx'
+import Home from './components/Home.jsx'
 import BridgeCard from './components/BridgeCard.jsx'
 import BridgeBanner from './components/BridgeBanner.jsx'
 import Explorer from './components/Explorer.jsx'
@@ -17,7 +18,7 @@ import PulseBackground from './components/PulseBackground.jsx'
 export default function App() {
   const wallets = useWallets()
   const { theme, toggle: toggleTheme } = useTheme()
-  const [tab, setTab] = useState('bridge')
+  const [tab, setTab] = useState('home')
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const [bridgeAccent, setBridgeAccent] = useState(null)
 
@@ -27,12 +28,14 @@ export default function App() {
   return (
     <div className="app">
       <div className="bg-glow" />
-      {tab === 'bridge' && <PulseBackground theme={theme} accent={bridgeAccent} />}
+      {(tab === 'home' || tab === 'bridge') && (
+        <PulseBackground theme={theme} accent={tab === 'bridge' ? bridgeAccent : null} />
+      )}
       <Header theme={theme} onToggleTheme={toggleTheme} active={tab} onChange={setTab} />
 
       <main
         className={`main ${
-          tab === 'explorer' || tab === 'guard' || tab === 'pulse'
+          tab === 'explorer' || tab === 'guard' || tab === 'pulse' || tab === 'home'
             ? 'main-explorer'
             : tab !== 'bridge'
               ? 'main-wide'
@@ -46,6 +49,7 @@ export default function App() {
           </div>
         )}
 
+        {tab === 'home' && <Home onNavigate={setTab} />}
         {tab === 'bridge' && (
           <>
             <BridgeBanner />
