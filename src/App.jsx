@@ -9,6 +9,8 @@ import BridgeBanner from './components/BridgeBanner.jsx'
 import Explorer from './components/Explorer.jsx'
 import Earn from './components/Earn.jsx'
 import Wallets from './components/Wallets.jsx'
+import Guard from './components/Guard.jsx'
+import TonPulse from './components/TonPulse.jsx'
 
 export default function App() {
   const wallets = useWallets()
@@ -26,7 +28,11 @@ export default function App() {
 
       <main
         className={`main ${
-          tab === 'explorer' ? 'main-explorer' : tab !== 'bridge' ? 'main-wide' : ''
+          tab === 'explorer' || tab === 'guard' || tab === 'pulse'
+            ? 'main-explorer'
+            : tab !== 'bridge'
+              ? 'main-wide'
+              : ''
         }`}
       >
         {evm.account && !onKnownChain && (
@@ -45,6 +51,8 @@ export default function App() {
         {tab === 'explorer' && <Explorer />}
         {tab === 'earn' && <Earn />}
         {tab === 'wallet' && <Wallets />}
+        {tab === 'guard' && <Guard />}
+        {tab === 'pulse' && <TonPulse />}
       </main>
 
       <footer className="footer">Built with React, Vite &amp; ethers · Testnet demo</footer>

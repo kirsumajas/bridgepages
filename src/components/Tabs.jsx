@@ -3,6 +3,8 @@ const TABS = [
   { key: 'explorer', label: 'Explorer', icon: '🔎' },
   { key: 'earn', label: 'Earn', icon: '💰' },
   { key: 'wallet', label: 'Wallet', icon: '👛' },
+  { key: 'guard', label: 'Guard', icon: '🛡️' },
+  { key: 'pulse', label: 'Pulse', icon: '📡' },
 ]
 
 export default function Tabs({ active, onChange }) {
