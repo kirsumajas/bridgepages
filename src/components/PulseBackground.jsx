@@ -59,6 +59,7 @@ export default function PulseBackground({ theme, accent }) {
       const cg = Math.round(current[1])
       const cb = Math.round(current[2])
 
+      ctx.lineWidth = 0.6
       for (let i = 0; i < N; i++) {
         const r = scale * Math.sqrt(i)
         if (r > maxR) continue
@@ -68,9 +69,17 @@ export default function PulseBackground({ theme, accent }) {
 
         const wave = 0.5 + 0.5 * Math.sin(r * 0.013 - t)
         const edgeFade = 1 - 0.7 * (r / maxR)
+
+        // Thin line from the dot back toward the origin (soft converging web).
+        const lineAlpha = (0.02 + 0.1 * wave) * edgeFade
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${lineAlpha.toFixed(3)})`
+        ctx.beginPath()
+        ctx.moveTo(cx, cy)
+        ctx.lineTo(x, y)
+        ctx.stroke()
+
         const alpha = (0.14 + 0.45 * wave) * edgeFade
         const size = 1.4 + 1.8 * wave
-
         ctx.beginPath()
         ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha.toFixed(3)})`
         ctx.arc(x, y, size, 0, Math.PI * 2)
