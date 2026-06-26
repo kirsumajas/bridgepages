@@ -24,7 +24,7 @@ const CONNECT_LABEL = {
   ton: 'Connect TON Wallet',
 }
 
-export default function BridgeCard() {
+export default function BridgeCard({ onSourceChange }) {
   const wallets = useWallets()
   const { status, submitting, send } = useTxSender(wallets)
   const { prices } = usePrices()
@@ -55,6 +55,11 @@ export default function BridgeCard() {
   useEffect(() => {
     setTokenIdx('native')
   }, [sourceKey])
+
+  // Tint the page background with the source chain's colour.
+  useEffect(() => {
+    onSourceChange?.(source.color)
+  }, [source, onSourceChange])
 
   // Default the recipient to the connected account on the destination chain
   // (only when it'd be a valid address for that chain).

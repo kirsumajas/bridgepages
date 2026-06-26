@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useWallets } from '../hooks/useWallets.jsx'
+import WalletPicker from './WalletPicker.jsx'
 
 const shorten = (addr) => `${addr.slice(0, 6)}…${addr.slice(-4)}`
 
@@ -7,7 +9,9 @@ const LABEL = { evm: 'EVM', solana: 'Solana', ton: 'TON' }
 
 export default function ConnectButton() {
   const wallets = useWallets()
+  const [open, setOpen] = useState(false)
   const connected = wallets.list.filter((w) => w.account)
+  const allConnected = connected.length === wallets.list.length
 
   return (
     <div className="connect-area">
@@ -22,15 +26,14 @@ export default function ConnectButton() {
           {shorten(w.account)}
         </button>
       ))}
-      {connected.length === 0 && (
-        <button
-          className="btn btn-primary"
-          onClick={wallets.evm.connect}
-          disabled={wallets.evm.connecting}
-        >
-          {wallets.evm.connecting ? 'Connecting…' : 'Connect Wallet'}
+
+      {!allConnected && (
+        <button className="btn btn-primary" onClick={() => setOpen(true)}>
+          {connected.length ? '+ Wallet' : 'Connect Wallet'}
         </button>
       )}
+
+      {open && <WalletPicker onClose={() => setOpen(false)} />}
     </div>
   )
 }

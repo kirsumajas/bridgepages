@@ -19,6 +19,7 @@ export default function App() {
   const { theme, toggle: toggleTheme } = useTheme()
   const [tab, setTab] = useState('bridge')
   const [privacyOpen, setPrivacyOpen] = useState(false)
+  const [bridgeAccent, setBridgeAccent] = useState(null)
 
   const evm = wallets.evm
   const onKnownChain = Boolean(getChainById(evm.chainId))
@@ -26,7 +27,7 @@ export default function App() {
   return (
     <div className="app">
       <div className="bg-glow" />
-      {tab === 'bridge' && <PulseBackground theme={theme} />}
+      {tab === 'bridge' && <PulseBackground theme={theme} accent={bridgeAccent} />}
       <Header theme={theme} onToggleTheme={toggleTheme} active={tab} onChange={setTab} />
 
       <main
@@ -48,7 +49,7 @@ export default function App() {
         {tab === 'bridge' && (
           <>
             <BridgeBanner />
-            <BridgeCard />
+            <BridgeCard onSourceChange={setBridgeAccent} />
           </>
         )}
         {tab === 'explorer' && <Explorer />}
