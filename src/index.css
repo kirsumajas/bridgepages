@@ -165,6 +165,12 @@ body {
   justify-content: flex-end;
 }
 
+.connect-area .btn {
+  white-space: nowrap;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
 .wallet-chip {
   padding: 8px 12px;
   font-size: 13px;
@@ -2034,11 +2040,30 @@ body {
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  transition: filter 0.15s;
+  animation: ctaBlink 1.6s ease-in-out infinite;
 }
 
 .sp-cta:hover {
   filter: brightness(1.05);
+  animation: none;
+}
+
+@keyframes ctaBlink {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(195, 245, 63, 0.55);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(195, 245, 63, 0);
+    filter: brightness(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-cta {
+    animation: none;
+  }
 }
 
 /* MEPO wordmark */
