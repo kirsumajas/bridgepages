@@ -5,6 +5,7 @@ import { useTxSender } from '../hooks/useTxSender.js'
 import { useWallets } from '../hooks/useWallets.jsx'
 import { usePrices } from '../hooks/usePrices.jsx'
 import { addHistory } from '../lib/history.js'
+import { randomProofMs } from '../lib/bridgeStatus.js'
 import { usdValue, formatUsd } from '../lib/prices.js'
 import { isSolanaAddress } from '../lib/solana.js'
 import { isTonAddress } from '../lib/ton.js'
@@ -117,6 +118,8 @@ export default function BridgeCard() {
           account,
           recipient,
           ts: Date.now(),
+          confirmMs: 0, // source tx already confirmed before we record it
+          proofMs: randomProofMs(), // simulated destination proof generation
         })
         setAmount('')
         setRefreshKey((k) => k + 1)

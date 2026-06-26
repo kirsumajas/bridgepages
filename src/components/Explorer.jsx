@@ -6,8 +6,12 @@ import { explorerTxUrl } from '../lib/bridge.js'
 import { getSolBlockHeight } from '../lib/solana.js'
 import { getTonSeqno } from '../lib/ton.js'
 import { useHistory } from '../hooks/useHistory.js'
-import { clearHistory } from '../lib/history.js'
+import { useTicker } from '../hooks/usePositions.js'
+import { addHistory, clearHistory } from '../lib/history.js'
+import { deriveStage, mockTransfer } from '../lib/bridgeStatus.js'
 import MarketStats from './MarketStats.jsx'
+
+const STAGE_BADGE = { confirming: 'badge-pending', proving: 'badge-warn', completed: 'badge-success' }
 
 // Latest block/slot/seqno for a chain, dispatched by VM.
 const fetchHeight = (chain) => {
@@ -178,63 +182,84 @@ const Row = ({ label, children }) => (
   </div>
 )
 
+function ActivityRow({ h }) {
+  const src = CHAINS[h.sourceKey]
+  const dst = CHAINS[h.destKey]
+  const stage = deriveStage(h, Date.now())
+  const inProgress = stage.key !== 'completed'
+
+  return (
+    <div className="activity-row activity-row-static">
+      <div className="activity-top">
+        <div className="activity-route">
+          <span className="chain-dot" style={{ background: src?.color }} />
+          {src?.short}
+          <span className="arrow">→</span>
+          <span className="chain-dot" style={{ background: dst?.color }} />
+          {dst?.short}
+        </div>
+        <div className="activity-meta">
+          <span className="activity-amount">
+            {h.amount} {h.asset}
+          </span>
+          <span className="activity-time">{timeAgo(h.ts)}</span>
+        </div>
+      </div>
+
+      <div className="activity-status">
+        <span className={`badge ${STAGE_BADGE[stage.key]}`}>
+          {stage.key === 'proving' ? `${stage.label} · ~${stage.remainingSec}s` : stage.label}
+        </span>
+
+        {inProgress ? (
+          <div className="proof-bar">
+            <div
+              className="proof-bar-fill"
+              style={{ width: `${Math.min(100, Math.round(stage.progress * 100))}%` }}
+            />
+          </div>
+        ) : src && h.hash ? (
+          <a className="activity-link" href={explorerTxUrl(src, h.hash)} target="_blank" rel="noreferrer">
+            View ↗
+          </a>
+        ) : (
+          <span className="activity-mock-tag">{h.mock ? 'demo' : 'released'}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function Activity() {
   const history = useHistory()
+  useTicker(1000) // re-render so stage countdowns/progress update live
 
   return (
     <div className="card">
       <div className="section-head">
         <h2 className="section-title">Your bridge activity</h2>
-        {history.length > 0 && (
-          <button className="link-btn" onClick={clearHistory}>
-            Clear
+        <div className="section-actions">
+          <button className="link-btn" onClick={() => addHistory(mockTransfer())}>
+            + Simulate transfer
           </button>
-        )}
+          {history.length > 0 && (
+            <button className="link-btn" onClick={clearHistory}>
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {history.length === 0 ? (
         <p className="empty">
-          No transfers yet. Bridges you make in this browser show up here.
+          No transfers yet. Bridge something, or hit “Simulate transfer” to watch the
+          deposit → proof → release lifecycle.
         </p>
       ) : (
         <div className="activity-list">
-          {history.map((h, i) => {
-            const src = CHAINS[h.sourceKey]
-            const dst = CHAINS[h.destKey]
-            const linkable = src && h.hash
-            const inner = (
-              <>
-                <div className="activity-route">
-                  <span className="chain-dot" style={{ background: src?.color }} />
-                  {src?.short}
-                  <span className="arrow">→</span>
-                  <span className="chain-dot" style={{ background: dst?.color }} />
-                  {dst?.short}
-                </div>
-                <div className="activity-meta">
-                  <span className="activity-amount">
-                    {h.amount} {h.asset}
-                  </span>
-                  <span className="activity-time">{timeAgo(h.ts)}</span>
-                </div>
-              </>
-            )
-            return linkable ? (
-              <a
-                key={`${h.ts}-${i}`}
-                className="activity-row"
-                href={explorerTxUrl(src, h.hash)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {inner}
-              </a>
-            ) : (
-              <div key={`${h.ts}-${i}`} className="activity-row activity-row-static">
-                {inner}
-              </div>
-            )
-          })}
+          {history.map((h, i) => (
+            <ActivityRow key={`${h.ts}-${i}`} h={h} />
+          ))}
         </div>
       )}
     </div>
@@ -243,11 +268,15 @@ function Activity() {
 
 export default function Explorer() {
   return (
-    <div className="stack">
-      <MarketStats />
+    <div className="explorer-grid">
+      <div className="span-2">
+        <MarketStats />
+      </div>
       <NetworkStatus />
-      <Activity />
       <TxLookup />
+      <div className="span-2">
+        <Activity />
+      </div>
     </div>
   )
 }

@@ -24,7 +24,11 @@ export default function App() {
       <Header theme={theme} onToggleTheme={toggleTheme} />
       <Tabs active={tab} onChange={setTab} />
 
-      <main className={`main ${tab !== 'bridge' ? 'main-wide' : ''}`}>
+      <main
+        className={`main ${
+          tab === 'explorer' ? 'main-explorer' : tab !== 'bridge' ? 'main-wide' : ''
+        }`}
+      >
         {evm.account && !onKnownChain && (
           <div className="banner banner-warn">
             Your EVM wallet is on an unsupported network. Pick an EVM route and we'll prompt
