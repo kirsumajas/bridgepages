@@ -59,10 +59,11 @@ export default function PulseBackground({ theme, accent }) {
       const cg = Math.round(current[1])
       const cb = Math.round(current[2])
 
-      ctx.lineWidth = 0.6
+      ctx.lineWidth = 0.9
+      const SEG = 12
       for (let i = 0; i < N; i++) {
         const r = scale * Math.sqrt(i)
-        if (r > maxR) continue
+        if (r > maxR || r < 1) continue
         const ang = i * GOLDEN
         const x = cx + r * Math.cos(ang)
         const y = cy + r * Math.sin(ang)
@@ -70,16 +71,31 @@ export default function PulseBackground({ theme, accent }) {
         const wave = 0.5 + 0.5 * Math.sin(r * 0.013 - t)
         const edgeFade = 1 - 0.7 * (r / maxR)
 
-        // Thin line from the dot back toward the origin (soft converging web).
-        const lineAlpha = (0.02 + 0.1 * wave) * edgeFade
+        // Unit vector origin→dot and its perpendicular (string displacement axis).
+        const ux = (x - cx) / r
+        const uy = (y - cy) / r
+        const px = -uy
+        const py = ux
+
+        // Vibrating string: fixed at both ends (sin(pi*f)), swelling with the
+        // pulse wave, each string phase-offset so the web shimmers.
+        const amp = Math.min(r * 0.06, 14) * (0.35 + 0.75 * wave)
+        const vib = Math.sin(t * 6 + i * 0.7)
+
+        const lineAlpha = (0.06 + 0.2 * wave) * edgeFade
         ctx.strokeStyle = `rgba(${cr},${cg},${cb},${lineAlpha.toFixed(3)})`
         ctx.beginPath()
-        ctx.moveTo(cx, cy)
-        ctx.lineTo(x, y)
+        for (let s = 0; s <= SEG; s++) {
+          const f = s / SEG
+          const d = amp * Math.sin(Math.PI * f) * vib
+          const lx = cx + (x - cx) * f + px * d
+          const ly = cy + (y - cy) * f + py * d
+          s === 0 ? ctx.moveTo(lx, ly) : ctx.lineTo(lx, ly)
+        }
         ctx.stroke()
 
-        const alpha = (0.14 + 0.45 * wave) * edgeFade
-        const size = 1.4 + 1.8 * wave
+        const alpha = (0.18 + 0.5 * wave) * edgeFade
+        const size = 1.5 + 1.9 * wave
         ctx.beginPath()
         ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha.toFixed(3)})`
         ctx.arc(x, y, size, 0, Math.PI * 2)
