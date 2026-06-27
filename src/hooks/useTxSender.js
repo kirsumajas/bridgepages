@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
-import { transferTo } from '../lib/bridge.js'
+import { transferTo, explorerTxUrl } from '../lib/bridge.js'
 import { getPhantom, sendSol } from '../lib/solana.js'
 import { tonToNano } from '../lib/ton.js'
+import { useToast } from './useToast.jsx'
 
 // VM-aware transaction flow. Given a destination `chain`, asset, amount, and
 // recipient address `to`, it routes to the right wallet/SDK, tracks status for
@@ -9,6 +10,7 @@ import { tonToNano } from '../lib/ton.js'
 export function useTxSender(wallets) {
   const [status, setStatus] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const { toast } = useToast()
 
   const send = useCallback(
     async ({ chain, token, amount, to, successMsg, onConfirmed }) => {
@@ -58,6 +60,7 @@ export function useTxSender(wallets) {
         }
 
         setStatus({ state: 'success', hash, message: successMsg })
+        toast('success', successMsg, { link: hash ? explorerTxUrl(chain, hash) : undefined })
         onConfirmed?.({ hash })
         return { hash }
       } catch (err) {
@@ -66,12 +69,13 @@ export function useTxSender(wallets) {
             ? 'Transaction rejected.'
             : err?.shortMessage || err?.message || 'Transaction failed.'
         setStatus({ state: 'error', message: msg })
+        toast('error', msg)
         return null
       } finally {
         setSubmitting(false)
       }
     },
-    [wallets],
+    [wallets, toast],
   )
 
   return { status, submitting, send, setStatus }

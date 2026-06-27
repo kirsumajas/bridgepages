@@ -2801,6 +2801,144 @@ body {
   margin-bottom: 4px;
 }
 
+/* Toasts */
+.toast-wrap {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: calc(100% - 32px);
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  min-width: 240px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  cursor: pointer;
+  animation: toastIn 0.25s ease;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.toast-success {
+  border-left-color: var(--green);
+}
+.toast-error {
+  border-left-color: var(--red);
+}
+
+.toast-icon {
+  font-weight: 800;
+}
+
+.toast-success .toast-icon {
+  color: var(--green);
+}
+.toast-error .toast-icon {
+  color: var(--red);
+}
+
+.toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toast-body a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Docs */
+.docs-title {
+  margin: 0;
+  font-size: 24px;
+}
+
+.docs-intro {
+  margin: 6px 0 0;
+  color: var(--text-dim);
+}
+
+.docs-p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-dim);
+  margin: 0 0 10px;
+}
+
+.faq {
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+}
+
+.faq:first-of-type {
+  border-top: none;
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  list-style: none;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::before {
+  content: '+ ';
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.faq[open] summary::before {
+  content: '– ';
+}
+
+.faq .docs-p {
+  margin: 10px 0 0;
+}
+
+/* Receive QR */
+.receive-modal {
+  max-width: 360px;
+  text-align: center;
+}
+
+.qr-box {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 16px;
+}
+
+.qr-box img {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.receive-modal .wallet-addr .addr-mono {
+  font-size: 12px;
+}
+
 /* Footer */
 .footer {
   position: relative;

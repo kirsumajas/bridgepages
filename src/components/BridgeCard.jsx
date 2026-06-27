@@ -9,6 +9,7 @@ import { randomProofMs } from '../lib/bridgeStatus.js'
 import { usdValue, formatUsd } from '../lib/prices.js'
 import { isSolanaAddress } from '../lib/solana.js'
 import { isTonAddress } from '../lib/ton.js'
+import { looksLikeEns, resolveEns } from '../lib/ens.js'
 import ChainSelect from './ChainSelect.jsx'
 import TxStatus from './TxStatus.jsx'
 
@@ -24,7 +25,7 @@ const CONNECT_LABEL = {
   ton: 'Connect TON Wallet',
 }
 
-export default function BridgeCard({ onSourceChange }) {
+export default function BridgeCard({ onSourceChange, prefill, onPrefillDone }) {
   const wallets = useWallets()
   const { status, submitting, send } = useTxSender(wallets)
   const { prices } = usePrices()
@@ -34,6 +35,7 @@ export default function BridgeCard({ onSourceChange }) {
   const [tokenIdx, setTokenIdx] = useState('native')
   const [amount, setAmount] = useState('')
   const [recipient, setRecipient] = useState('')
+  const [ensAddr, setEnsAddr] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const source = CHAINS[sourceKey]
@@ -68,6 +70,37 @@ export default function BridgeCard({ onSourceChange }) {
     if (destAccount && !recipient) setRecipient(destAccount)
   }, [dest, wallets, recipient])
 
+  // Resolve ENS names for EVM destinations (debounced).
+  useEffect(() => {
+    setEnsAddr(null)
+    if (dest.vm !== 'evm' || !looksLikeEns(recipient)) return
+    let cancelled = false
+    const id = setTimeout(async () => {
+      const addr = await resolveEns(recipient)
+      if (!cancelled) setEnsAddr(addr)
+    }, 400)
+    return () => {
+      cancelled = true
+      clearTimeout(id)
+    }
+  }, [recipient, dest])
+
+  // Prefill recipient from the Wallet page "Use" action.
+  useEffect(() => {
+    if (!prefill) return
+    setRecipient(prefill.address)
+    const destChain = CHAIN_LIST.find((c) => c.vm === prefill.vm)
+    if (destChain) {
+      setDestKey(destChain.key)
+      if (destChain.key === sourceKey) {
+        const other = CHAIN_LIST.find((c) => c.key !== destChain.key)
+        if (other) setSourceKey(other.key)
+      }
+    }
+    onPrefillDone?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill])
+
   const handleSourceChange = (key) => {
     setSourceKey(key)
     if (key === destKey) {
@@ -99,10 +132,12 @@ export default function BridgeCard({ onSourceChange }) {
   const overBalance = amountNum > balanceNum
   const needsConnect = !account
 
+  const recipientValid = validateFor(dest.vm, recipient) || (dest.vm === 'evm' && !!ensAddr)
+
   let disabledReason = null
   if (!amount || amountNum <= 0) disabledReason = 'Enter an amount'
   else if (overBalance) disabledReason = 'Insufficient balance'
-  else if (!validateFor(dest.vm, recipient)) disabledReason = `Enter a valid ${dest.short} address`
+  else if (!recipientValid) disabledReason = `Enter a valid ${dest.short} address`
 
   const onBridge = async () => {
     if (disabledReason) return
@@ -205,6 +240,7 @@ export default function BridgeCard({ onSourceChange }) {
           onChange={(e) => setRecipient(e.target.value)}
           spellCheck={false}
         />
+        {ensAddr && <div className="usd-hint">→ {ensAddr.slice(0, 6)}…{ensAddr.slice(-4)}</div>}
       </label>
 
       {needsConnect ? (

@@ -6,6 +6,7 @@ const TABS = [
   { key: 'wallet', label: 'Wallet', icon: '👛' },
   { key: 'guard', label: 'Guard', icon: '🛡️' },
   { key: 'pulse', label: 'Pulse', icon: '📡' },
+  { key: 'docs', label: 'Docs', icon: '📄' },
 ]
 
 export default function Tabs({ active, onChange }) {

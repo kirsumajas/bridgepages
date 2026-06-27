@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useWallets } from './hooks/useWallets.jsx'
 import { useTheme } from './hooks/useTheme.js'
+import { useHashRoute } from './hooks/useHashRoute.js'
 import { getChainById } from './config/chains.js'
 import Header from './components/Header.jsx'
 import Home from './components/Home.jsx'
@@ -11,6 +12,7 @@ import Earn from './components/Earn.jsx'
 import Wallets from './components/Wallets.jsx'
 import Guard from './components/Guard.jsx'
 import TonPulse from './components/TonPulse.jsx'
+import Docs from './components/Docs.jsx'
 import CookieConsent from './components/CookieConsent.jsx'
 import PrivacyModal from './components/PrivacyModal.jsx'
 import PulseBackground from './components/PulseBackground.jsx'
@@ -18,9 +20,15 @@ import PulseBackground from './components/PulseBackground.jsx'
 export default function App() {
   const wallets = useWallets()
   const { theme, toggle: toggleTheme } = useTheme()
-  const [tab, setTab] = useState('home')
+  const [tab, setTab] = useHashRoute('home')
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const [bridgeAccent, setBridgeAccent] = useState(null)
+  const [prefill, setPrefill] = useState(null)
+
+  const useRecipient = (r) => {
+    setPrefill({ address: r.address, vm: r.vm })
+    setTab('bridge')
+  }
 
   const evm = wallets.evm
   const onKnownChain = Boolean(getChainById(evm.chainId))
@@ -35,7 +43,7 @@ export default function App() {
 
       <main
         className={`main ${
-          tab === 'explorer' || tab === 'guard' || tab === 'pulse' || tab === 'home'
+          tab === 'explorer' || tab === 'guard' || tab === 'pulse' || tab === 'home' || tab === 'docs'
             ? 'main-explorer'
             : tab !== 'bridge'
               ? 'main-wide'
@@ -53,14 +61,19 @@ export default function App() {
         {tab === 'bridge' && (
           <>
             <BridgeBanner />
-            <BridgeCard onSourceChange={setBridgeAccent} />
+            <BridgeCard
+              onSourceChange={setBridgeAccent}
+              prefill={prefill}
+              onPrefillDone={() => setPrefill(null)}
+            />
           </>
         )}
         {tab === 'explorer' && <Explorer />}
         {tab === 'earn' && <Earn />}
-        {tab === 'wallet' && <Wallets />}
+        {tab === 'wallet' && <Wallets onUseRecipient={useRecipient} />}
         {tab === 'guard' && <Guard />}
         {tab === 'pulse' && <TonPulse />}
+        {tab === 'docs' && <Docs />}
       </main>
 
       <footer className="footer">

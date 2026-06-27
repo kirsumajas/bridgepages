@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import QRCode from 'qrcode'
 import { CHAIN_LIST, CHAINS } from '../config/chains.js'
 import { useWallets } from '../hooks/useWallets.jsx'
 import { usePrices } from '../hooks/usePrices.jsx'
 import { useWalletBalances } from '../hooks/useWalletBalances.js'
+import { useHistory } from '../hooks/useHistory.js'
 import { priceOf, formatUsd } from '../lib/prices.js'
+import { deriveStage } from '../lib/bridgeStatus.js'
 
 const shorten = (a, n = 6) => (a ? `${a.slice(0, n)}…${a.slice(-4)}` : '')
 
@@ -40,15 +43,15 @@ const saveRecipients = (list) => {
   }
 }
 
-// --- Mock transaction history ---
-const MOCK_TX = [
-  { id: 't1', from: 'arbitrumSepolia', to: 'sepolia', asset: 'ETH', amount: '0.08', status: 'pending', when: 'just now' },
-  { id: 't2', from: 'sepolia', to: 'solanaDevnet', asset: 'ETH', amount: '0.25', status: 'completed', when: '2h ago' },
-  { id: 't3', from: 'tonTestnet', to: 'amoy', asset: 'TON', amount: '12.0', status: 'completed', when: '5h ago' },
-  { id: 't4', from: 'bscTestnet', to: 'solanaDevnet', asset: 'tBNB', amount: '1.5', status: 'completed', when: 'yesterday' },
-  { id: 't5', from: 'solanaDevnet', to: 'tonTestnet', asset: 'SOL', amount: '3.2', status: 'failed', when: '2 days ago' },
-]
-const STATUS_BADGE = { completed: 'badge-success', pending: 'badge-warn', failed: 'badge-error' }
+const STAGE_BADGE = { confirming: 'badge-pending', proving: 'badge-warn', completed: 'badge-success' }
+
+const timeAgo = (ts) => {
+  const s = Math.floor((Date.now() - ts) / 1000)
+  if (s < 60) return `${s}s ago`
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  return `${Math.floor(s / 86400)}d ago`
+}
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false)
@@ -68,7 +71,7 @@ function CopyButton({ value }) {
   )
 }
 
-function WalletCard({ eco, wallet, balances, prices }) {
+function WalletCard({ eco, wallet, balances, prices, onReceive }) {
   const chains = CHAIN_LIST.filter((c) => c.vm === eco.vm)
   const connected = Boolean(wallet.account)
   const subtotal = chains.reduce((sum, c) => {
@@ -101,6 +104,9 @@ function WalletCard({ eco, wallet, balances, prices }) {
           <div className="wc-addr">
             <span className="addr-mono">{shorten(wallet.account, 8)}</span>
             <CopyButton value={wallet.account} />
+            <button className="copy-btn" onClick={() => onReceive(wallet.account, eco.name)}>
+              QR
+            </button>
           </div>
           <div className="wc-subtotal">{formatUsd(subtotal)}</div>
           <div className="wc-balances">
@@ -125,7 +131,35 @@ function WalletCard({ eco, wallet, balances, prices }) {
   )
 }
 
-function Recipients() {
+function ReceiveModal({ address, label, onClose }) {
+  const [src, setSrc] = useState(null)
+  useEffect(() => {
+    QRCode.toDataURL(address, { margin: 1, width: 240, color: { dark: '#0b1411', light: '#ffffff' } })
+      .then(setSrc)
+      .catch(() => {})
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [address, onClose])
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal receive-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+        <h2 className="section-title">Receive · {label}</h2>
+        <div className="qr-box">{src && <img src={src} alt="address QR" width="220" height="220" />}</div>
+        <div className="wallet-addr">
+          <span className="addr-mono">{address}</span>
+          <CopyButton value={address} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Recipients({ onUseRecipient }) {
   const [list, setList] = useState(loadRecipients)
   const [label, setLabel] = useState('')
   const [address, setAddress] = useState('')
@@ -156,6 +190,9 @@ function Recipients() {
               <div className="addr-mono rec-addr">{shorten(r.address, 8)}</div>
             </div>
             <span className="rec-net">{VM_LABEL[r.vm]}</span>
+            <button className="copy-btn" onClick={() => onUseRecipient(r)} title="Use in bridge">
+              Use
+            </button>
             <CopyButton value={r.address} />
             <button className="icon-btn" onClick={() => remove(r.id)} title="Remove">
               ✕
@@ -192,40 +229,47 @@ function Recipients() {
 }
 
 function History() {
+  const history = useHistory()
+
   return (
     <div className="card">
       <h2 className="section-title">Transaction history</h2>
-      <div className="txh-list">
-        {MOCK_TX.map((t) => {
-          const src = CHAINS[t.from]
-          const dst = CHAINS[t.to]
-          return (
-            <div className="txh-row" key={t.id}>
-              <div className="txh-route">
-                <span className="chain-dot" style={{ background: src?.color }} />
-                {src?.short}
-                <span className="arrow">→</span>
-                <span className="chain-dot" style={{ background: dst?.color }} />
-                {dst?.short}
+      {history.length === 0 ? (
+        <p className="empty">No transfers yet — bridges you make appear here.</p>
+      ) : (
+        <div className="txh-list">
+          {history.map((h, i) => {
+            const src = CHAINS[h.sourceKey]
+            const dst = CHAINS[h.destKey]
+            const stage = deriveStage(h, Date.now())
+            return (
+              <div className="txh-row" key={`${h.ts}-${i}`}>
+                <div className="txh-route">
+                  <span className="chain-dot" style={{ background: src?.color }} />
+                  {src?.short}
+                  <span className="arrow">→</span>
+                  <span className="chain-dot" style={{ background: dst?.color }} />
+                  {dst?.short}
+                </div>
+                <div className="txh-amt">
+                  {h.amount} {h.asset}
+                </div>
+                <span className={`badge ${STAGE_BADGE[stage.key]}`}>{stage.label}</span>
+                <span className="txh-time">{timeAgo(h.ts)}</span>
               </div>
-              <div className="txh-amt">
-                {t.amount} {t.asset}
-              </div>
-              <span className={`badge ${STATUS_BADGE[t.status]}`}>{t.status}</span>
-              <span className="txh-time">{t.when}</span>
-            </div>
-          )
-        })}
-      </div>
-      <p className="market-note">Sample data — live history coming soon.</p>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
 
-export default function Wallets() {
+export default function Wallets({ onUseRecipient }) {
   const wallets = useWallets()
   const { prices } = usePrices()
   const [refreshKey, setRefreshKey] = useState(0)
+  const [receive, setReceive] = useState(null)
   const { pairs, balances, loading } = useWalletBalances(refreshKey)
 
   const connectedCount = wallets.list.filter((w) => w.account).length
@@ -259,12 +303,17 @@ export default function Wallets() {
             wallet={wallets.forVm(eco.vm)}
             balances={balances}
             prices={prices}
+            onReceive={(address, label) => setReceive({ address, label })}
           />
         ))}
       </div>
 
-      <Recipients />
+      <Recipients onUseRecipient={onUseRecipient} />
       <History />
+
+      {receive && (
+        <ReceiveModal address={receive.address} label={receive.label} onClose={() => setReceive(null)} />
+      )}
 
       <p className="disclaimer">
         Balances are read live from each network's testnet RPC; USD uses mainnet reference
