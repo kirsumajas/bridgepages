@@ -1488,6 +1488,224 @@ body {
   font-size: 14px;
 }
 
+/* Compact wallet page */
+.wallet-hero-c {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.wallet-refresh {
+  margin-left: auto;
+}
+
+.wallet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.wallet-card-c {
+  padding: 16px;
+}
+
+.wc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wc-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.wc-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.wc-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.wc-addr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.wc-addr .addr-mono {
+  flex: 1;
+  font-size: 12px;
+}
+
+.wc-subtotal {
+  font-size: 20px;
+  font-weight: 800;
+  margin-top: 8px;
+}
+
+.wc-balances {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wc-bal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.wc-bal-chain {
+  color: var(--text-dim);
+}
+
+.wc-bal-amt {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.wc-empty {
+  margin: 14px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.icon-btn:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+/* Recipients */
+.rec-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.rec-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.rec-row:first-child {
+  border-top: none;
+}
+
+.rec-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rec-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.rec-addr {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.rec-net {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rec-add {
+  display: grid;
+  grid-template-columns: 1fr auto 1.4fr auto;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.rec-add .text-input,
+.rec-add .select {
+  padding: 10px 12px;
+}
+
+@media (max-width: 560px) {
+  .rec-add {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Transaction history */
+.txh-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.txh-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.txh-row:first-child {
+  border-top: none;
+}
+
+.txh-route {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.txh-route .arrow {
+  color: var(--text-dim);
+  margin: 0 2px;
+}
+
+.txh-amt {
+  font-variant-numeric: tabular-nums;
+}
+
+.txh-time {
+  color: var(--text-dim);
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .txh-row {
+    grid-template-columns: 1fr auto;
+  }
+  .txh-amt {
+    order: 3;
+  }
+  .txh-time {
+    order: 4;
+  }
+}
+
 /* Bridge Guard */
 .guard-title {
   display: flex;
@@ -1760,9 +1978,22 @@ body {
   font-size: 14px;
 }
 
-.pulse-modes {
+.pulse-modes,
+.pulse-networks {
   display: flex;
   gap: 6px;
+}
+
+.pulse-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.pulse-networks .period-active {
+  background: var(--green);
+  border-color: var(--green);
 }
 
 .pulse-stage {
