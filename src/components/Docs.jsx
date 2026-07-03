@@ -3,7 +3,7 @@ const SECTIONS = [
     title: 'What is MEPO?',
     body: [
       'MEPO is a minimal, fully client-side front-end for moving assets across chains. It connects real wallets, reads live balances, and walks a transfer through a deposit → proof → release lifecycle.',
-      'This is a testnet demo built to explore ideas. There is no backend — everything runs in your browser and deploys as static files.',
+      'This is a testnet demo. The front-end is fully client-side and deploys as static files; the TON → Solana route is a real trust-minimized bridge, backed by a live relayer, an SP1 zero-knowledge prover, and a Solana bridge program that releases test USDC.',
     ],
   },
   {
@@ -16,8 +16,8 @@ const SECTIONS = [
   {
     title: 'How bridging works',
     body: [
-      'A cross-chain transfer has two parts. First, a deposit is signed on the source chain — this is a real, on-chain testnet transaction. Second, a relayer observes the deposit, a proof is generated, and the asset is released on the destination chain.',
-      'This demo implements the source-side deposit end-to-end and visualizes the proof/release lifecycle. The destination release requires bridge contracts and a relayer, which are out of scope for a static front-end.',
+      'A cross-chain transfer has two parts. First, a deposit is signed on the source chain — this is a real, on-chain testnet transaction. Second, a relayer observes the deposit, a zero-knowledge proof of the deposit is generated, and the asset is released on the destination chain.',
+      'TON → Solana is implemented end to end. A live relayer watches the TON lock contract; on each deposit it proves — inside an SP1 zkVM — that the deposit is committed in a TON masterchain block signed by ≥2/3 of validators, wraps that into a Groth16 proof, and a Solana program verifies the proof (a single BN254 pairing) and releases test USDC to your Solana address. The lifecycle panel shows the real stages: detected → proving → released. The other source chains sign a real deposit, but their destination release is not wired in this demo.',
     ],
   },
   {
@@ -60,8 +60,8 @@ const FAQ = [
     a: 'From each network’s public faucet (e.g. a Sepolia or BNB testnet faucet, the Solana devnet airdrop, or a TON testnet faucet).',
   },
   {
-    q: 'Why does the destination transfer not complete?',
-    a: 'The source deposit is real, but the destination release needs a deployed bridge contract and relayer — intentionally out of scope for this demo.',
+    q: 'Does the destination transfer actually complete?',
+    a: 'For TON → Solana, yes — a live relayer, an SP1 zero-knowledge proof of TON consensus, and on-chain Groth16 verification release test USDC to your Solana (devnet) address; watch the live status panel on the Bridge tab. For the EVM source chains, the deposit is real but the destination release is not wired in this demo.',
   },
 ]
 

@@ -106,8 +106,9 @@ export const CHAINS = {
     rpcUrls: ['https://testnet.toncenter.com/api/v2'],
     blockExplorerUrls: ['https://testnet.tonviewer.com'],
     color: '#0098ea',
-    // Placeholder bridge address (TON zero address, user-friendly form).
-    bridgeAddress: 'UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+    // Real TON->Solana lock contract (the relayer watches this account). Deposits carry a
+    // 'DEPO' payload with the Solana recipient; see lib/tonBridge.js + hooks/useTxSender.js.
+    bridgeAddress: 'UQDiB5vrfi6g9Sa_eUAo-x2l-nzsDPRaoDNAFRK5oYOCjRi4',
     tokens: [],
   },
 }
