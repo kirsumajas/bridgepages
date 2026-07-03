@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { transferTo, explorerTxUrl } from '../lib/bridge.js'
 import { getPhantom, sendSol } from '../lib/solana.js'
 import { tonToNano } from '../lib/ton.js'
+import { buildDepositMessage } from '../lib/tonBridge.js'
 import { useToast } from './useToast.jsx'
 
 // VM-aware transaction flow. Given a destination `chain`, asset, amount, and
@@ -13,7 +14,7 @@ export function useTxSender(wallets) {
   const { toast } = useToast()
 
   const send = useCallback(
-    async ({ chain, token, amount, to, successMsg, onConfirmed }) => {
+    async ({ chain, token, amount, to, bridgeRecipient, successMsg, onConfirmed }) => {
       setSubmitting(true)
       setStatus(null)
       try {
@@ -50,9 +51,15 @@ export function useTxSender(wallets) {
           const w = wallets.forVm('ton')
           if (!w.account) throw new Error('Connect your TON wallet first.')
           setStatus({ state: 'pending', message: 'Confirm the transaction in your TON wallet…' })
+          // TON->Solana bridge deposit: send the real 'DEPO' payload to the lock contract with
+          // the Solana recipient encoded, so the relayer detects it and the guest decodes it.
+          // Falls back to a bare transfer if no bridge recipient (non-bridge send).
+          const messages = bridgeRecipient
+            ? [buildDepositMessage({ lockContract: to, solanaRecipient: bridgeRecipient, tonAmount: amount }).message]
+            : [{ address: to, amount: tonToNano(amount) }]
           await w.tonConnectUI.sendTransaction({
             validUntil: Math.floor(Date.now() / 1000) + 600,
-            messages: [{ address: to, amount: tonToNano(amount) }],
+            messages,
           })
           hash = null // TonConnect returns a BOC, not a tx hash.
         } else {

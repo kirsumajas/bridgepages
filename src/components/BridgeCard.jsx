@@ -146,6 +146,9 @@ export default function BridgeCard({ onSourceChange, prefill, onPrefillDone }) {
       token,
       amount,
       to: source.bridgeAddress,
+      // For TON->Solana, encode the Solana recipient in the deposit payload so the relayer +
+      // guest release USDC to it. (Only used by the TON send path.)
+      bridgeRecipient: source.vm === 'ton' && dest.vm === 'solana' ? recipient : undefined,
       successMsg: `Deposited ${amount} ${assetSymbol} on ${source.short}. Bridging to ${dest.short} is handled by the relayer.`,
       onConfirmed: ({ hash }) => {
         addHistory({

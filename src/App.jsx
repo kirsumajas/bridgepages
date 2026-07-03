@@ -6,6 +6,7 @@ import { getChainById } from './config/chains.js'
 import Header from './components/Header.jsx'
 import Home from './components/Home.jsx'
 import BridgeCard from './components/BridgeCard.jsx'
+import BridgeStatus from './components/BridgeStatus.jsx'
 import BridgeBanner from './components/BridgeBanner.jsx'
 import Explorer from './components/Explorer.jsx'
 import Earn from './components/Earn.jsx'
@@ -66,6 +67,7 @@ export default function App() {
               prefill={prefill}
               onPrefillDone={() => setPrefill(null)}
             />
+            <BridgeStatus />
           </>
         )}
         {tab === 'explorer' && <Explorer />}

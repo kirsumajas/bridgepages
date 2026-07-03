@@ -2966,3 +2966,22 @@ body {
 .footer-link:hover {
   color: var(--text);
 }
+
+/* --- Live bridge status panel (BridgeStatus.jsx) --- */
+.bridge-status { margin-top: 16px; }
+.bridge-status h3 { margin: 0 0 12px; font-size: 15px; }
+.status-row { display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 10px 0; border-top: 1px solid rgba(128,128,128,0.15); }
+.status-meta .mono { font-family: ui-monospace, monospace; font-size: 12px; opacity: 0.8; }
+.status-meta .muted { font-size: 12px; opacity: 0.6; }
+.status-stage { flex: 1; max-width: 320px; }
+.stage-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.stage-label { font-size: 12px; font-weight: 600; }
+.stage-row a { font-size: 11px; opacity: 0.8; }
+.stage-detected { color: #6b7280; } .stage-proving { color: #d97706; }
+.stage-proven, .stage-submitting { color: #2563eb; } .stage-released { color: #16a34a; }
+.stage-failed { color: #dc2626; }
+.progress { height: 5px; border-radius: 3px; background: rgba(128,128,128,0.18); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,#2563eb,#16a34a);
+  transition: width 0.6s ease; }
+.progress-fill.failed { background: #dc2626; }
