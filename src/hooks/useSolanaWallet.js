@@ -35,14 +35,12 @@ export function useSolanaWallet() {
     setAccount(null)
   }, [])
 
-  // Eagerly reconnect if already trusted, and track account changes.
+  // Do NOT auto-connect on load — Phantom should only be invoked when the user
+  // explicitly clicks Connect. We just track account/disconnect changes so state
+  // stays in sync once a connection exists.
   useEffect(() => {
     const p = getPhantom()
     if (!p) return
-    p.connect({ onlyIfTrusted: true })
-      .then((res) => setAccount(res.publicKey.toString()))
-      .catch(() => {})
-
     const onAccountChanged = (pk) => setAccount(pk ? pk.toString() : null)
     p.on?.('accountChanged', onAccountChanged)
     p.on?.('disconnect', () => setAccount(null))
