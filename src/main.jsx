@@ -7,8 +7,12 @@ import { WalletsProvider } from './hooks/useWallets.jsx'
 import { ToastProvider } from './hooks/useToast.jsx'
 import './index.css'
 
-// Must be a public, absolute URL the TON wallet can fetch.
-const TON_MANIFEST_URL = 'https://kirsumajas.github.io/bridgepages/tonconnect-manifest.json'
+// Absolute, public URL the TON wallet fetches. Set VITE_TON_MANIFEST_URL to a
+// stable host (named Cloudflare Tunnel / domain); the fallback is the current
+// droplet tunnel. Stale caching is handled by nginx headers (see DEPLOY.md).
+const TON_MANIFEST_URL =
+  import.meta.env?.VITE_TON_MANIFEST_URL ||
+  'https://redhead-decimal-walls-dana.trycloudflare.com/tonconnect-manifest.json'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -9,12 +9,9 @@ import { PublicKey } from '@solana/web3.js'
 
 export const OP_DEPOSIT = 0x4445504f // 'DEPO'
 
-// Droplet status API over HTTPS (Cloudflare Tunnel, so an HTTPS site can reach it without
-// mixed-content). Override with VITE_BRIDGE_STATUS_URL. NOTE: trycloudflare URLs are
-// ephemeral — if the droplet's cf-status service restarts, update this + redeploy.
-export const STATUS_URL =
-  import.meta.env?.VITE_BRIDGE_STATUS_URL ||
-  'https://broker-customize-stayed-earnings.trycloudflare.com/api/status'
+// Status API. Droplet-hosted: same-origin via the nginx /api proxy (no mixed-content/CORS).
+// Override with VITE_BRIDGE_STATUS_URL for a different host.
+export const STATUS_URL = import.meta.env?.VITE_BRIDGE_STATUS_URL || '/api/status'
 
 // Build a TonConnect message for a TON->Solana deposit.
 // tonAmount = TON to lock (also the amount reused as USDC base units on release).

@@ -1,4 +1,5 @@
 :root {
+  --mepo-build: 3; /* forces a fresh CSS asset hash to defeat a stale-cached stylesheet */
   --bg: #0b0f1a;
   --surface: #131a2a;
   --surface-2: #1b2336;
@@ -2972,16 +2973,29 @@ body {
 .bridge-status h3 { margin: 0 0 12px; font-size: 15px; }
 .status-row { display: flex; justify-content: space-between; align-items: center; gap: 16px;
   padding: 10px 0; border-top: 1px solid rgba(128,128,128,0.15); }
+.status-meta { min-width: 0; }
 .status-meta .mono { font-family: ui-monospace, monospace; font-size: 12px; opacity: 0.8; }
 .status-meta .muted { font-size: 12px; opacity: 0.6; }
-.status-stage { flex: 1; max-width: 320px; }
-.stage-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.stage-label { font-size: 12px; font-weight: 600; }
-.stage-row a { font-size: 11px; opacity: 0.8; }
+.stage-label { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.stage-label a, .status-meta a { font-size: 11px; opacity: 0.85; }
 .stage-detected { color: #6b7280; } .stage-proving { color: #d97706; }
 .stage-proven, .stage-submitting { color: #2563eb; } .stage-released { color: #16a34a; }
 .stage-failed { color: #dc2626; }
-.progress { height: 5px; border-radius: 3px; background: rgba(128,128,128,0.18); overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,#2563eb,#16a34a);
-  transition: width 0.6s ease; }
-.progress-fill.failed { background: #dc2626; }
+
+/* Circular progress ring (replaces the old horizontal bar) */
+.status-ring { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+.ring-svg { width: 44px; height: 44px; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: rgba(128,128,128,0.18); stroke-width: 4; }
+.ring-fill { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.ring-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; }
+.status-ring.stage-detected .ring-fill { stroke: #6b7280; } .status-ring.stage-detected .ring-center { color: #6b7280; }
+.status-ring.stage-proving .ring-fill { stroke: #d97706; } .status-ring.stage-proving .ring-center { color: #d97706; }
+.status-ring.stage-proven .ring-fill, .status-ring.stage-submitting .ring-fill { stroke: #2563eb; }
+.status-ring.stage-proven .ring-center, .status-ring.stage-submitting .ring-center { color: #2563eb; }
+.status-ring.stage-released .ring-fill { stroke: #16a34a; }
+.status-ring.stage-released .ring-center { color: #16a34a; font-size: 17px; }
+.status-ring.stage-failed .ring-fill { stroke: #dc2626; }
+.status-ring.stage-failed .ring-center { color: #dc2626; font-size: 15px; }
+.status-ring.spinning .ring-svg { animation: ring-spin 1.4s linear infinite; }
+@keyframes ring-spin { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
